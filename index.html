@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAMI徕米 · AI体验平台</title>
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --gold: #d4a574;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --glass: rgba(255,255,255,0.08);
+            --gradient-1: linear-gradient(135deg, #1a1a2e 0%, #0f3460 50%, #16213e 100%);
+            --gradient-2: linear-gradient(135deg, #e94560 0%, #d4a574 100%);
+            --gradient-3: linear-gradient(135deg, #0f3460 0%, #e94560 100%);
+            --sidebar-width: 220px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--gradient-1);
+            color: var(--light);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        #particles-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ===== 左侧固定侧边栏 ===== */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: rgba(10,10,30,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .sidebar-logo {
+            font-size: 22px; font-weight: 800; letter-spacing: 3px;
+            background: var(--gradient-2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            padding: 0 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 12px;
+        }
+
+        .sidebar-section-label {
+            font-size: 11px; color: rgba(255,255,255,0.3);
+            letter-spacing: 2px; text-transform: uppercase;
+            padding: 16px 24px 8px;
+        }
+
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin: 2px 8px; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 10px;
+            color: rgba(255,255,255,0.6); text-decoration: none;
+            padding: 10px 16px; border-radius: 10px;
+            font-size: 14px; transition: all 0.25s ease;
+        }
+        .sidebar-menu a:hover { color: var(--light); background: var(--glass); }
+        .sidebar-menu a.active { color: var(--highlight); background: rgba(233,69,96,0.1); }
+        .sidebar-menu a .icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .sidebar-bottom p { font-size: 11px; color: rgba(255,255,255,0.25); line-height: 1.5; }
+
+        /* ===== 主内容区 ===== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== 移动端侧边栏切换 ===== */
+        .sidebar-toggle {
+            display: none;
+            position: fixed; top: 16px; left: 16px;
+            z-index: 1001;
+            width: 40px; height: 40px;
+            border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(10,10,30,0.85);
+            backdrop-filter: blur(10px);
+            color: #fff; font-size: 20px;
+            cursor: pointer; align-items: center; justify-content: center;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 60px 24px;
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 800px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 16px; background: rgba(233,69,96,0.15);
+            border: 1px solid rgba(233,69,96,0.3);
+            border-radius: 20px; font-size: 13px; color: var(--highlight);
+            margin-bottom: 24px;
+        }
+        .hero-badge::before {
+            content: ''; width: 6px; height: 6px; background: var(--highlight);
+            border-radius: 50%; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .hero h1 {
+            font-size: clamp(40px,8vw,72px); font-weight: 900; line-height: 1.1; margin-bottom: 16px;
+            background: linear-gradient(135deg,#fff 0%,#d4a574 50%,#e94560 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero-subtitle { font-size: clamp(16px,3vw,20px); color: rgba(255,255,255,0.6); margin-bottom: 40px; line-height: 1.6; }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; border-radius: 12px;
+            font-size: 15px; font-weight: 600; text-decoration: none;
+            cursor: pointer; transition: all 0.3s ease; border: none;
+        }
+        .btn-primary { background: var(--gradient-2); color: #fff; box-shadow: 0 8px 32px rgba(233,69,96,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(233,69,96,0.5); }
+        .btn-outline { background: transparent; color: var(--light); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-outline:hover { background: var(--glass); border-color: rgba(255,255,255,0.4); }
+
+        /* ===== 通用Section ===== */
+        .section { position: relative; z-index: 1; padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 56px; }
+        .section-tag {
+            display: inline-block; padding: 4px 12px;
+            background: rgba(212,165,116,0.15); border: 1px solid rgba(212,165,116,0.3);
+            border-radius: 6px; font-size: 12px; color: var(--gold);
+            margin-bottom: 16px; letter-spacing: 2px;
+        }
+        .section-title { font-size: clamp(28px,5vw,40px); font-weight: 800; margin-bottom: 16px; }
+        .section-desc { font-size: 16px; color: rgba(255,255,255,0.5); max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+        /* ===== 品牌卡片 ===== */
+        .brand-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 24px; }
+        .brand-card {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 32px; transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        .brand-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--gradient-2); transform: scaleY(0); transform-origin: top;
+            transition: transform 0.3s ease;
+        }
+        .brand-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+        .brand-card:hover::before { transform: scaleY(1); }
+        .brand-card-icon {
+            width: 48px; height: 48px; border-radius: 12px; background: var(--gradient-3);
+            display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;
+        }
+        .brand-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+        .brand-card p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+
+        /* ===== 使用步骤 ===== */
+        .steps-container { display: flex; flex-direction: column; gap: 16px; max-width: 800px; margin: 0 auto; }
+        .step-item {
+            display: flex; align-items: flex-start; gap: 20px; padding: 24px;
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; transition: all 0.3s ease; cursor: pointer;
+        }
+        .step-item:hover { background: rgba(255,255,255,0.05); transform: translateX(8px); }
+        .step-number {
+            width: 44px; height: 44px; border-radius: 50%; background: var(--gradient-3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; flex-shrink: 0;
+        }
+        .step-content h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+        .step-content p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+
+        /* ===== 场景搭配 ===== */
+        .scene-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; }
+        .scene-card {
+            position: relative; border-radius: 20px; overflow: hidden;
+            min-height: 280px; display: flex; align-items: flex-end;
+            padding: 24px; cursor: pointer; transition: all 0.4s ease;
+        }
+        .scene-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(10,10,30,0.95) 0%, rgba(10,10,30,0.4) 60%, transparent 100%);
+            z-index: 1;
+        }
+        .scene-card-1 { background: linear-gradient(135deg,#0f3460,#1a1a2e); }
+        .scene-card-2 { background: linear-gradient(135deg,#1a1a2e,#e94560); }
+        .scene-card-3 { background: linear-gradient(135deg,#16213e,#0f3460); }
+        .scene-card-4 { background: linear-gradient(135deg,#e94560,#16213e); }
+        .scene-card-5 { background: linear-gradient(135deg,#0f3460,#d4a574); }
+        .scene-card-6 { background: linear-gradient(135deg,#1a1a2e,#0f3460); }
+        .scene-card:hover { transform: translateY(-6px) scale(1.02); }
+        .scene-card-content { position: relative; z-index: 2; }
+        .scene-card-icon { font-size: 32px; margin-bottom: 12px; }
+        .scene-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .scene-card p { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+        .scene-card-tag {
+            display: inline-block; padding: 2px 8px; background: rgba(233,69,96,0.3);
+            border-radius: 4px; font-size: 11px; color: var(--highlight); margin-top: 8px;
+        }
+
+        /* ===== 视频区域 ===== */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 24px; }
+        .video-card {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; overflow: hidden; transition: all 0.3s ease;
+        }
+        .video-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+        .video-thumbnail {
+            position: relative; height: 200px;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .video-thumbnail-1 { background: linear-gradient(135deg,#1a1a2e 0%,#e94560 100%); }
+        .video-thumbnail-2 { background: linear-gradient(135deg,#0f3460 0%,#d4a574 100%); }
+        .video-thumbnail-3 { background: linear-gradient(135deg,#16213e 0%,#e94560 100%); }
+        .video-thumbnail-4 { background: linear-gradient(135deg,#d4a574 0%,#0f3460 100%); }
+        .video-play-btn {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .video-play-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+        .video-play-btn svg { width: 20px; height: 20px; fill: #fff; margin-left: 2px; }
+        .video-duration {
+            position: absolute; bottom: 12px; right: 12px;
+            padding: 2px 8px; background: rgba(0,0,0,0.7);
+            border-radius: 4px; font-size: 12px; color: #fff;
+        }
+        .video-info { padding: 20px; }
+        .video-info-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 8px; }
+        .video-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+        .video-info p { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* ===== 视频弹窗 ===== */
+        .video-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .video-modal-overlay.show { display: flex; opacity: 1; }
+        .video-modal {
+            position: relative; width: 90%; max-width: 800px;
+            background: #0a0a1e; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .video-modal-overlay.show .video-modal { transform: scale(1); }
+        .video-modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .video-modal-title { font-size: 16px; font-weight: 600; color: #fff; }
+        .video-modal-close {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: none; color: #fff;
+            font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+        }
+        .video-modal-close:hover { background: rgba(233,69,96,0.3); }
+        .video-modal-body { position: relative; width: 100%; padding-top: 56.25%; }
+        .video-modal-body iframe, .video-modal-body video {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+
+        /* ===== 味道选择 - 全新布局 ===== */
+        .flavor-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .flavor-list-panel {
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .flavor-list-panel::-webkit-scrollbar { width: 4px; }
+        .flavor-list-panel::-webkit-scrollbar-track { background: transparent; }
+        .flavor-list-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .flavor-series-label {
+            font-size: 12px; color: var(--gold);
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 12px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 4px; position: sticky; top: 0;
+            background: rgba(10,10,30,0.95);
+            backdrop-filter: blur(10px); z-index: 2;
+        }
+
+        .flavor-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s ease;
+            margin-bottom: 2px;
+        }
+        .flavor-item:hover { background: rgba(255,255,255,0.05); }
+        .flavor-item.active {
+            background: rgba(233,69,96,0.12);
+            border: 1px solid rgba(233,69,96,0.2);
+        }
+        .flavor-item-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+        .flavor-item-name { font-size: 13px; color: rgba(255,255,255,0.8); }
+        .flavor-item.active .flavor-item-name { color: var(--highlight); font-weight: 600; }
+        .flavor-item-price { font-size: 11px; color: rgba(255,255,255,0.3); margin-left: auto; }
+
+        .flavor-detail-panel {
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+            min-height: 500px;
+            position: sticky;
+            top: 24px;
+        }
+
+        .flavor-visual {
+            width: 100px; height: 100px;
+            margin: 0 auto 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; position: relative;
+        }
+        .flavor-visual::before {
+            content: ''; position: absolute; inset: -6px;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.1);
+            animation: rotate 8s linear infinite;
+        }
+        @keyframes rotate { to { transform: rotate(360deg); } }
+
+        .flavor-name { font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+        .flavor-series-badge {
+            display: inline-block; padding: 4px 12px;
+            border-radius: 6px; font-size: 11px;
+            margin: 0 auto 16px; display: table;
+        }
+        .flavor-rating { display: flex; justify-content: center; gap: 4px; margin-bottom: 16px; }
+        .star { font-size: 18px; color: var(--gold); }
+        .flavor-desc { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 20px; }
+        .flavor-notes { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .flavor-note {
+            padding: 6px 14px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; font-size: 12px; color: rgba(255,255,255,0.7);
+        }
+        .flavor-price-tag {
+            text-align: center; margin-top: 20px;
+            font-size: 20px; font-weight: 700; color: var(--gold);
+        }
+
+        /* ===== AI区域 ===== */
+        .ai-section {
+            background: rgba(10,10,30,0.5); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 48px; text-align: center;
+        }
+        .ai-icon {
+            width: 80px; height: 80px; margin: 0 auto 24px;
+            border-radius: 24px; background: var(--gradient-3);
+            display: flex; align-items: center; justify-content: center; font-size: 36px;
+        }
+        .ai-section h2 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+        .ai-section p { font-size: 15px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+        .ai-suggestions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        .ai-suggestion {
+            padding: 12px 20px; background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; font-size: 13px; color: rgba(255,255,255,0.7);
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .ai-suggestion:hover { background: rgba(255,255,255,0.08); color: var(--light); border-color: rgba(255,255,255,0.2); }
+
+        /* ===== Footer ===== */
+        .footer { text-align: center; padding: 48px 24px; border-top: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 1; }
+        .footer-logo { font-size: 20px; font-weight: 800; letter-spacing: 2px; background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .footer p { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+        .footer-warning { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 16px; padding: 12px 24px; background: rgba(233,69,96,0.05); border: 1px solid rgba(233,69,96,0.1); border-radius: 8px; display: inline-block; }
+
+        /* ===== 滚动动画 ===== */
+        .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .flavor-layout { grid-template-columns: 1fr; }
+            .flavor-list-panel { max-height: 400px; }
+            .flavor-detail-panel { position: static; }
+        }
+        @media (max-width: 768px) {
+            :root { --sidebar-width: 0px; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: 240px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: flex; }
+            .section { padding: 60px 16px; }
+            .ai-section { padding: 32px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+
+<!-- 移动端菜单按钮 -->
+<button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+<!-- 左侧固定侧边栏 -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">LAMI 徕米</div>
+    <div class="sidebar-section-label">导航</div>
+    <ul class="sidebar-menu">
+        <li><a href="#hero" class="active"><span class="icon">🏠</span> 首页</a></li>
+        <li><a href="#brand"><span class="icon">🏭</span> 品牌介绍</a></li>
+        <li><a href="#usage"><span class="icon">📖</span> 使用方法</a></li>
+        <li><a href="#scene"><span class="icon">🎬</span> 场景搭配</a></li>
+        <li><a href="#star-video"><span class="icon">⭐</span> 明星同款</a></li>
+        <li><a href="#movie-video"><span class="icon">🎥</span> 电影搭配</a></li>
+    </ul>
+    <div class="sidebar-section-label">口味选择</div>
+    <ul class="sidebar-menu">
+        <li><a href="#flavor" data-series="guobiao"><span class="icon">🇨🇳</span> 国标系列</a></li>
+        <li><a href="#flavor" data-series="turbo"><span class="icon">🚀</span> 冰爆系列</a></li>
+        <li><a href="#flavor" data-series="speed"><span class="icon">⚡</span> 小火箭系列</a></li>
+    </ul>
+    <div class="sidebar-section-label">智能助手</div>
+    <ul class="sidebar-menu">
+        <li><a href="#ai"><span class="icon">🤖</span> AI推荐</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+        <p>⚠️ 未成年人禁止使用<br>本产品含尼古丁</p>
+    </div>
+</aside>
+
+<!-- 主内容区 -->
+<div class="main-content">
+
+<!-- Hero -->
+<section class="hero" id="hero">
+    <div class="hero-content">
+        <div class="hero-badge">AI智能体验平台</div>
+        <h1>LAMI 徕米<br>雾化新境界</h1>
+        <p class="hero-subtitle">
+            广东五叶神集团旗下电子雾化品牌 · 21年烟草行业积淀<br>
+            草本萃取 · 独家配方 · 国标品质 · 40+口味任选
+        </p>
+        <div class="hero-buttons">
+            <a href="#brand" class="btn btn-primary">探索品牌</a>
+            <a href="#flavor" class="btn btn-outline">选择口味</a>
+        </div>
+    </div>
+</section>
+
+<!-- 品牌介绍 -->
+<section class="section fade-in" id="brand">
+    <div class="section-header">
+        <span class="section-tag">BRAND STORY</span>
+        <h2 class="section-title">品牌介绍</h2>
+        <p class="section-desc">徕米雾电科技（深圳）有限公司旗下品牌，隶属于广东五叶神集团，2019年6月成立</p>
+    </div>
+    <div class="brand-grid">
+        <div class="brand-card">
+            <div class="brand-card-icon">🏭</div>
+            <h3>五叶神集团背景</h3>
+            <p>广东五叶神集团成立于1999年，20余年深耕烟草行业，累计产销量逾200万大箱，累计创造税收230亿元。从知名卷烟品牌"五叶神"到高端酱酒"厚工坊"，成功完成跨领域产业升级。</p>
+        </div>
+        <div class="brand-card">
+            <div class="brand-card-icon">🔬</div>
+            <h3>科研实力</h3>
+            <p>兄弟机构神农烟科与新火智造共同加持，立足亚洲整合科研资源。拥有多项独家专利，在烟油研发和雾化器制造工艺上持续迭代升级。</p>
+        </div>
+        <div class="brand-card">
+            <div class="brand-card-icon">🌿</div>
+            <h3>草本萃取配方</h3>
+            <p>主打草本植物复合配方，通过对天然薄荷原料的精华萃取，保证入口感。特殊配方设计，在行业中以口感纯净、抽吸顺滑著称。</p>
+        </div>
+        <div class="brand-card">
+            <div class="brand-card-icon">⚙️</div>
+            <h3>精湛工艺</h3>
+            <p>CNC钻切割工艺制作，磨砂金属杆体，弧度棱面设计。蕾丝LOGO呼吸灯打孔，强磁咪头雾化器对接，四层防漏油设计，陶瓷雾化芯。</p>
+        </div>
+        <div class="brand-card">
+            <div class="brand-card-icon">🔋</div>
+            <h3>产品配置</h3>
+            <p>400mAh电池容量，支持一天使用量。标准套装含烟杆+金属收纳盒+数据线，6种配色可选。侧进气设计，滴嘴收缩贴合唇部。</p>
+        </div>
+        <div class="brand-card">
+            <div class="brand-card-icon">🛡️</div>
+            <h3>国标品质</h3>
+            <p>符合国家标准烟具设备，注重健康、环保和时尚理念。坚持品质至上，以敬畏心尊重行业，以平常心拥抱新规，以进取心做好品质。</p>
+        </div>
+    </div>
+</section>
+
+<!-- 使用方法 -->
+<section class="section fade-in" id="usage">
+    <div class="section-header">
+        <span class="section-tag">USER GUIDE</span>
+        <h2 class="section-title">使用方法</h2>
+        <p class="section-desc">从开箱到日常使用，5步轻松上手徕米电子烟</p>
+    </div>
+    <div class="steps-container">
+        <div class="step-item"><div class="step-number">1</div><div class="step-content"><h4>开箱检查</h4><p>打开包装，确认套装包含：烟杆×1、金属收纳盒×1、数据线×1。检查烟杆外观无损伤，呼吸灯正常。首次使用前建议充满电。</p></div></div>
+        <div class="step-item"><div class="step-number">2</div><div class="step-content"><h4>充电激活</h4><p>使用附赠数据线连接烟杆充电口，充满电后呼吸灯由闪烁转为常亮。400mAh电池，充满后可支持约一天使用量。</p></div></div>
+        <div class="step-item"><div class="step-number">3</div><div class="step-content"><h4>解锁开机</h4><p>在2秒内连续插拔雾化弹三次，正面的M形呼吸灯会闪烁，并震动一次表示解锁成功。此为童锁安全设计，防止误触。</p></div></div>
+        <div class="step-item"><div class="step-number">4</div><div class="step-content"><h4>安装雾化弹</h4><p>将雾化弹对准烟杆顶部接口，通过强磁吸附自动对位。安装后稍作等待（约30秒）让雾化芯充分浸润烟油，确保口感均匀。</p></div></div>
+        <div class="step-item"><div class="step-number">5</div><div class="step-content"><h4>日常使用与维护</h4><p>吸入时无需按键，自动感应启动。使用一段时间后建议用棉签清洗发热棒。不使用时取下雾化弹单独存放，避免长时间放置导致漏油或冷凝。收纳盒可保护烟杆，方便携带。</p></div></div>
+    </div>
+</section>
+
+<!-- 场景搭配 -->
+<section class="section fade-in" id="scene">
+    <div class="section-header">
+        <span class="section-tag">LIFE STYLE</span>
+        <h2 class="section-title">场景搭配</h2>
+        <p class="section-desc">不同场景，不同心情，徕米陪你度过每一刻</p>
+    </div>
+    <div class="scene-grid">
+        <div class="scene-card scene-card-1"><div class="scene-card-content"><div class="scene-card-icon">☕</div><h3>咖啡时光</h3><p>午后咖啡馆，一杯手冲搭配纯甄极地口味，清甜烟草与咖啡醇香交织，享受独处的松弛感。</p><span class="scene-card-tag">推荐口味：纯甄极地</span></div></div>
+        <div class="scene-card scene-card-2"><div class="scene-card-content"><div class="scene-card-icon">🌃</div><h3>深夜独酌</h3><p>城市夜景窗前，倒一杯威士忌，配上千山翠的可可尾调，深沉烟草味与酒香相融，都市夜归人的仪式感。</p><span class="scene-card-tag">推荐口味：千山翠</span></div></div>
+        <div class="scene-card scene-card-3"><div class="scene-card-content"><div class="scene-card-icon">🏔️</div><h3>户外旅行</h3><p>山林湖畔，清风高原的焦甜香气与自然气息共鸣，仿佛置身云南高原，让每一次呼吸都充满自然力量。</p><span class="scene-card-tag">推荐口味：清风高原</span></div></div>
+        <div class="scene-card scene-card-4"><div class="scene-card-content"><div class="scene-card-icon">🎮</div><h3>游戏电竞</h3><p>游戏激战间隙，一口逍遥游的中式烤烟香，清新不呛喉，中等击喉感提神醒脑，重回战场状态满满。</p><span class="scene-card-tag">推荐口味：逍遥游</span></div></div>
+        <div class="scene-card scene-card-5"><div class="scene-card-content"><div class="scene-card-icon">📖</div><h3>阅读静思</h3><p>书房午后，一本好书搭配纯臻半岛口味，浓郁而不过于刺激，清雅烟草与书香相得益彰，沉浸于文字世界。</p><span class="scene-card-tag">推荐口味：纯臻半岛</span></div></div>
+        <div class="scene-card scene-card-6"><div class="scene-card-content"><div class="scene-card-icon">🎶</div><h3>音乐时光</h3><p>戴上耳机，播放喜欢的歌单，清风高原的温和清新在唇齿间流转，让音乐与雾化的双重治愈填满空间。</p><span class="scene-card-tag">推荐口味：清风高原</span></div></div>
+    </div>
+</section>
+
+<!-- 明星同款视频 -->
+<section class="section fade-in" id="star-video">
+    <div class="section-header">
+        <span class="section-tag">CELEBRITY</span>
+        <h2 class="section-title">明星同款</h2>
+        <p class="section-desc">明星都在用的徕米，看看他们的选择</p>
+    </div>
+    <div class="video-grid">
+        <div class="video-card" data-video='{"type":"iframe","src":"//player.bilibili.com/player.html?bvid=BV1kGWGeoERZ&page=1&high_quality=1&autoplay=1","title":"徕米LAMI国标四大口味测评"}'>
+            <div class="video-thumbnail video-thumbnail-1"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">04:32</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(233,69,96,0.15);color:#e94560;">口味测评</span><h4>徕米国标四大口味测评</h4><p>清风高原、纯甄极地、千山翠、逍遥游，全面解析四款口味</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"iframe","src":"//player.bilibili.com/player.html?bvid=BV1BaSiYhEsr&page=1&high_quality=1&autoplay=1","title":"徕米六口味测评"}'>
+            <div class="video-thumbnail video-thumbnail-2"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">03:15</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(212,165,116,0.15);color:#d4a574;">开箱测评</span><h4>徕米六口味性价比测评</h4><p>逍遥游、千山翠、纯甄极地等六款口味国标开箱</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"iframe","src":"//player.bilibili.com/player.html?bvid=BV1n6HCzhENN&page=1&high_quality=1&autoplay=1","title":"徕米2代烟弹开箱评测"}'>
+            <div class="video-thumbnail video-thumbnail-3"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">05:43</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(233,69,96,0.15);color:#e94560;">深度评测</span><h4>徕米2代5号通烟弹评测</h4><p>徕米新品2代通配系列，口味特点详细介绍</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"iframe","src":"//player.bilibili.com/player.html?bvid=BV17A3X63Eeq&page=1&high_quality=1&autoplay=1","title":"雾化器专业测评"}'>
+            <div class="video-thumbnail video-thumbnail-4"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">02:24</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(212,165,116,0.15);color:#d4a574;">专业测评</span><h4>雾化器深度专业测评</h4><p>MTL储油雾化器搭配多款丁盐口味分享</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- 电影搭配视频 -->
+<section class="section fade-in" id="movie-video">
+    <div class="section-header">
+        <span class="section-tag">CINEMA</span>
+        <h2 class="section-title">电影搭配</h2>
+        <p class="section-desc">当电影遇上徕米，每个场景都有专属味道</p>
+    </div>
+    <div class="video-grid">
+        <div class="video-card" data-video='{"type":"mp4","src":"https://cdn.pixabay.com/video/2019/06/03/24162-341473987_large.mp4","poster":"https://images.unsplash.com/photo-1489599849927-2ee915286d8f?w=800","title":"《教父》× 千山翠 — 雾化氛围"}'>
+            <div class="video-thumbnail video-thumbnail-3"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">00:40</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(233,69,96,0.15);color:#e94560;">经典搭配</span><h4>《教父》× 千山翠</h4><p>深沉的可可尾调搭配教父的黑帮史诗，感受权力的重量与烟草的醇厚</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"mp4","src":"https://cdn.pixabay.com/video/2019/05/20/23804-337232420_large.mp4","poster":"https://images.unsplash.com/photo-1485846494215-7cdd4b5a5db6?w=800","title":"《重庆森林》× 纯甄极地"}'>
+            <div class="video-thumbnail video-thumbnail-1"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">00:20</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(212,165,116,0.15);color:#d4a574;">文艺搭配</span><h4>《重庆森林》× 纯甄极地</h4><p>清雅烟草与王家卫的迷离光影，都市孤独感与冰雪世界的碰撞</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"mp4","src":"https://cdn.pixabay.com/video/2019/06/03/24161-341473992_large.mp4","poster":"https://images.unsplash.com/photo-1448375240586-882708dbb2f1?w=800","title":"《荒野生存》× 清风高原"}'>
+            <div class="video-thumbnail video-thumbnail-2"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">00:36</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(233,69,96,0.15);color:#e94560;">冒险搭配</span><h4>《荒野生存》× 清风高原</h4><p>焦甜香气与荒野自由的共鸣，感受云南高原般的辽阔与纯净</p></div>
+        </div>
+        <div class="video-card" data-video='{"type":"mp4","src":"https://cdn.pixabay.com/video/2022/03/30/112327-694236272_large.mp4","poster":"https://images.unsplash.com/photo-1542204165-6587d52c2f4b?w=800","title":"《卧虎藏龙》× 逍遥游"}'>
+            <div class="video-thumbnail video-thumbnail-4"><div class="video-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><span class="video-duration">00:25</span></div>
+            <div class="video-info"><span class="video-info-tag" style="background:rgba(212,165,116,0.15);color:#d4a574;">中式搭配</span><h4>《卧虎藏龙》× 逍遥游</h4><p>中式烤烟香与武侠意境，烟雾缭绕中感受传统烟草独特风味</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- 味道选择 - 全新列表布局 -->
+<section class="section fade-in" id="flavor">
+    <div class="section-header">
+        <span class="section-tag">FLAVOR</span>
+        <h2 class="section-title">味道选择</h2>
+        <p class="section-desc">3大系列 · 40+口味 · 总有一款击中你的味蕾</p>
+    </div>
+    <div class="flavor-layout">
+        <!-- 左侧口味列表 -->
+        <div class="flavor-list-panel" id="flavorListPanel">
+            <!-- 动态生成 -->
+        </div>
+        <!-- 右侧口味详情 -->
+        <div class="flavor-detail-panel" id="flavorDetailPanel">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+</section>
+
+<!-- AI对话区域 -->
+<section class="section fade-in" id="ai">
+    <div class="ai-section">
+        <div class="ai-icon">🤖</div>
+        <h2>AI智能推荐</h2>
+        <p>不知道选哪个口味？告诉AI你的偏好，获取专属推荐</p>
+        <div class="ai-suggestions">
+            <div class="ai-suggestion" onclick="sendPrompt('我喜欢清淡的口味，有什么推荐？')">我喜欢清淡的口味</div>
+            <div class="ai-suggestion" onclick="sendPrompt('我平时喝咖啡，搭配什么口味好？')">平时喝咖啡搭配什么</div>
+            <div class="ai-suggestion" onclick="sendPrompt('我想要击喉感强的，选哪个？')">想要击喉感强的</div>
+            <div class="ai-suggestion" onclick="sendPrompt('新手入门推荐哪个口味？')">新手入门推荐</div>
+            <div class="ai-suggestion" onclick="sendPrompt('我喜欢水果味的')">喜欢水果味</div>
+            <div class="ai-suggestion" onclick="sendPrompt('我喜欢薄荷冰凉感的')">喜欢薄荷冰凉</div>
+        </div>
+    </div>
+</section>
+
+<!-- 视频弹窗 -->
+<div class="video-modal-overlay" id="videoModalOverlay">
+    <div class="video-modal">
+        <div class="video-modal-header">
+            <span class="video-modal-title" id="videoModalTitle"></span>
+            <button class="video-modal-close" id="videoModalClose">✕</button>
+        </div>
+        <div class="video-modal-body" id="videoModalBody"></div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-logo">LAMI 徕米</div>
+    <p>徕米雾电科技（深圳）有限公司 | 广东五叶神集团旗下品牌</p>
+    <p>成立于2019年 · 21年烟草行业积淀 · 国标品质</p>
+    <div class="footer-warning">⚠️ 未成年人禁止使用本产品 | 本产品含尼古丁 | 尼古丁是一种令人上瘾的物质</div>
+</footer>
+
+</div><!-- /main-content -->
+
+<script>
+    // ===== 粒子背景 =====
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 0.5; this.speedY = Math.random() * 0.5 + 0.1;
+            this.speedX = (Math.random() - 0.5) * 0.3; this.opacity = Math.random() * 0.5 + 0.1;
+            this.color = Math.random() > 0.7 ? '233,69,96' : '212,165,116';
+        }
+        update() {
+            this.y -= this.speedY; this.x += this.speedX;
+            if (this.y < 0) { this.y = canvas.height; this.x = Math.random() * canvas.width; }
+            if (this.x < 0 || this.x > canvas.width) { this.x = Math.random() * canvas.width; }
+        }
+        draw() {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`; ctx.fill();
+        }
+    }
+    function initParticles() {
+        particles = []; const count = Math.floor(canvas.width * canvas.height / 15000);
+        for (let i = 0; i < count; i++) particles.push(new Particle());
+    }
+    initParticles(); window.addEventListener('resize', initParticles);
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ===== 侧边栏 =====
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    sidebarToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    // ===== 侧边栏导航高亮 =====
+    const navLinks = document.querySelectorAll('.sidebar-menu a[href^="#"]');
+    const sections = document.querySelectorAll('section[id]');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const top = section.offsetTop - 100;
+            if (window.scrollY >= top) current = section.getAttribute('id');
+        });
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
+        });
+    });
+
+    // ===== 移动端点击导航后关闭侧边栏 =====
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) sidebar.classList.remove('open');
+        });
+    });
+
+    // ===== 滚动动画 =====
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // ===== 口味数据库 =====
+    const flavorData = {
+        guobiao: {
+            seriesName: '国标系列',
+            seriesColor: '#e94560',
+            flavors: [
+                { name: '清风高原', icon: '🏔️', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#2d5a3d,#1a1a2e)', desc: '以云南烟草为基调，口感温和而清新。入口清甜烟草本香，中段中烘烤香与焦甜香韵交织，尾段酮甜回甘。让人仿佛置身于云南的高原之上，深受追求温和口感的烟民追捧。', notes: ['云南烟草','焦甜香','温和清新','入门首选'] },
+                { name: '纯甄极地', icon: '❄️', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#1e3a5f,#e0f0ff)', desc: '清雅烟草搭配清甜香，入口浓郁烟草本香，中段烤烟香韵持久稳定，尾段焦烤香韵微带坚果香。仿佛将人带入清凉的冰雪世界，给人一种清新宜人的感觉。', notes: ['清雅烟草','清甜香','冰雪清凉','坚果尾调'] },
+                { name: '千山翠', icon: '🌿', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#1a3c2e,#2d5a3d)', desc: '入口云南山雾中的烤烟香，中段烤烟香略带可可香韵，尾段淡淡花香带一丝甜蜜回甘。具有击喉感，为追求深度烟草本味的烟民提供独特享受。', notes: ['深度烟草','可可尾调','淡淡花香','击喉感强'] },
+                { name: '逍遥游', icon: '🏯', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#8b4513,#d4a574)', desc: '入口萦绕甜香韵调，中段清甜细腻的柔和烤烟香，尾段烟草焦香余味舒适回甘。不呛喉、中等击喉感，清新烟草味带您进入中式园林，感受传统烟草的独特风味。', notes: ['中式烤烟','不呛喉','中等击喉','新品推荐'] },
+                { name: '水龙吟', icon: '🐉', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#1a3a4a,#0f3460)', desc: '入口甜烟草香清新自然，中段烤烟烟草香韵纯正浓郁，尾段烟草焦烤香韵微带草木香，余味悠长。适合喜欢纯正烟草香气的用户。', notes: ['甜烟草香','纯正浓郁','草木尾调','余味悠长'] },
+                { name: '纯臻半岛', icon: '🏝️', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#2d5a3d,#0f3460)', desc: '入口浓厚烤香烟与焦香交融，中段略带回香烟香浓郁，尾段淡淡回甜余韵悠长。适合喜爱江南淡香口感的人士，层次丰富，回味无穷。', notes: ['浓厚烤烟','焦香交融','淡淡回甜','江南淡香'] }
+            ]
+        },
+        turbo: {
+            seriesName: 'TURBO冰爆 一次性',
+            seriesColor: '#d4a574',
+            flavors: [
+                { name: '百香果', icon: '🟡', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#d4a017,#ff8c00)', desc: '热带百香果的酸甜风味，冰感适中，果香浓郁。一口下去仿佛置身热带果园，清新解腻。', notes: ['热带果香','酸甜','冰感适中','解腻'] },
+                { name: '薄荷', icon: '🍃', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#2d8f5e,#1a1a2e)', desc: '经典极凉薄荷，冰感爆棚，纯净不杂。适合重凉党，提神力强，每一口都是冰爽至极的体验。', notes: ['极凉','纯净薄荷','提神','重凉党'] },
+                { name: '薄荷莫吉托', icon: '🍸', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#2d8f5e,#d4a574)', desc: '薄荷与青柠的鸡尾酒搭配，清凉中带一丝微醺的调酒感。层次分明，解腻属性强，适合追求复杂口感的用户。', notes: ['鸡尾酒感','青柠薄荷','层次分明','微醺'] },
+                { name: '冰红茶', icon: '🧊', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#8b0000,#e94560)', desc: '经典冰红茶口味，茶香与冰感完美平衡。入口红茶醇香，中段冰凉渐起，尾段回甘。冰感表现突出。', notes: ['红茶醇香','冰凉','回甘','经典'] },
+                { name: '海盐荔枝', icon: '🫐', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#e94560,#0f3460)', desc: '咸鲜海盐气息与荔枝甜香碰撞，前调咸鲜突出，中调荔枝酸甜平衡，后调咸甜融合，余韵清爽。层次分明。', notes: ['海盐','荔枝','咸甜融合','层次分明'] },
+                { name: '海盐柠檬', icon: '🍋', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#f0e68c,#0f3460)', desc: '海盐的咸鲜与柠檬的酸爽交织，冰度适中，解腻属性强。夏日首选，一口下去清凉提神。', notes: ['海盐','柠檬','酸爽','夏日首选'] },
+                { name: '绿豆', icon: '🟢', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#4caf50,#1a1a2e)', desc: '经典绿豆冰沙口味，甜度适中，入口即化的绿豆香，带一丝冰爽。怀旧口味，适合不喜欢太甜的用户。', notes: ['绿豆冰沙','怀旧','甜度适中','冰爽'] },
+                { name: '芒果', icon: '🥭', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#ffa500,#e94560)', desc: '热带芒果的浓郁果香，甜而不腻，冰感适中。入口芒果汁般的饱满口感，尾段微微酸涩，还原度高。', notes: ['热带芒果','甜而不腻','果香浓郁','高还原'] },
+                { name: '茉莉龙井', icon: '🍵', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#2d8f5e,#1a1a2e)', desc: '茉莉花香与龙井茶香融合，清香型代表。入口茉莉芬芳，中段龙井清茶回甘，尾段冰凉。适合不爱重甜的用户。', notes: ['茉莉花香','龙井清茶','清香型','回甘'] },
+                { name: '茉莉青提', icon: '🍇', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#7b68ee,#0f3460)', desc: '茉莉清香与青提果味交织，前调花香，中调青提酸甜，尾调冰凉清新。清香型，适合追求层次口感的用户。', notes: ['茉莉清香','青提果味','层次感','冰凉'] },
+                { name: '葡萄', icon: '🍇', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#6a0dad,#1a1a2e)', desc: '巨峰葡萄的浓郁汁感，入口葡萄皮香，中段果肉甜香，尾段微酸。甜度偏高，还原度高，适合甜党。', notes: ['巨峰葡萄','果汁感','甜度高','高还原'] },
+                { name: '青柠', icon: '🟩', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#32cd32,#0f3460)', desc: '青柠皮的酸爽香调，冰度适中，前调青柠皮香突出，中调柠檬酸甜平衡，后调咸甜融合，余韵清爽。', notes: ['青柠皮香','酸爽','冰度适中','清爽'] },
+                { name: '山竹番石榴', icon: '🟣', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#8b008b,#0f3460)', desc: '山竹的甜美与番石榴的热带气息碰撞，入口番石榴果香，中段山竹甜香，尾段冰凉。热带风情十足。', notes: ['山竹','番石榴','热带风情','冰凉'] },
+                { name: '西瓜', icon: '🍉', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#ff6b6b,#1a1a2e)', desc: '夏日西瓜的清甜汁水感，入口西瓜皮清香，中段果肉甜汁，尾段冰爽。甜度适中，夏日消暑首选。', notes: ['西瓜清甜','汁水感','消暑','冰爽'] }
+            ]
+        },
+        speed: {
+            seriesName: 'SPEED小火箭 一次性',
+            seriesColor: '#0f3460',
+            flavors: [
+                { name: '西瓜', icon: '🍉', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#ff6b6b,#1a1a2e)', desc: '清甜西瓜口味，冰感适中，入口即化的果汁感，甜度刚好不腻。夏日消暑利器。', notes: ['西瓜','清甜','消暑','冰感适中'] },
+                { name: '蜜瓜', icon: '🍈', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#90ee90,#0f3460)', desc: '哈密瓜的香甜，入口浓郁瓜果香，甜度偏高但不过分。尾段带一丝冰凉。', notes: ['哈密瓜','香甜','果香浓郁','冰凉'] },
+                { name: '葡萄', icon: '🍇', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#6a0dad,#1a1a2e)', desc: '葡萄汁的饱满口感，入口果皮香，中段果肉甜，尾段微酸。还原度高，甜党首选。', notes: ['葡萄','饱满','高还原','甜党'] },
+                { name: '龙井', icon: '🍵', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#2d8f5e,#1a1a2e)', desc: '龙井茶香，入口清茶回甘，中段茶韵悠长，尾段微凉。适合喜欢茶味不爱甜味的用户。', notes: ['龙井','清茶','回甘','茶韵'] },
+                { name: '青提', icon: '🍇', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#7b68ee,#0f3460)', desc: '青提葡萄的酸甜果香，入口提子皮香，中段果肉甜，尾段冰凉。酸甜平衡好，不腻口。', notes: ['青提','酸甜','冰凉','不腻'] },
+                { name: '青柠', icon: '🟩', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#32cd32,#0f3460)', desc: '青柠的酸爽冰凉，入口青柠皮香，中段酸度适中，尾段冰爽。提神醒脑。', notes: ['青柠','酸爽','提神','冰爽'] },
+                { name: '百香果', icon: '🟡', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#d4a017,#ff8c00)', desc: '热带百香果的酸甜，入口果香浓郁，中段酸甜平衡，尾段微凉。层次丰富。', notes: ['百香果','热带','酸甜','层次丰富'] },
+                { name: '可乐', icon: '🥤', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#3b0000,#1a1a2e)', desc: '可乐的碳酸气泡感，入口可乐甜香，中段微酸，尾段冰凉。仿佛在喝冰可乐。', notes: ['可乐','碳酸感','冰凉','甜香'] },
+                { name: '宝矿力', icon: '💧', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#00bfff,#0f3460)', desc: '宝矿力水特的味道，入口清甜微盐，中段果味，尾段冰凉。运动后解渴首选。', notes: ['宝矿力','清甜','微盐','解渴'] },
+                { name: '番石榴', icon: '🟠', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#ff8c00,#0f3460)', desc: '番石榴的热带果香，入口浓郁番石榴味，甜度适中，尾段微凉。热带风情。', notes: ['番石榴','热带','甜度适中','微凉'] },
+                { name: '老冰棍', icon: '🧊', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#add8e6,#0f3460)', desc: '怀旧老冰棍的奶香冰甜，入口冰棍甜香，中段奶味，尾段冰爽。童年回忆。', notes: ['老冰棍','怀旧','奶香','童年回忆'] },
+                { name: '海盐柠檬', icon: '🍋', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#f0e68c,#0f3460)', desc: '海盐咸鲜与柠檬酸爽的搭配，入口咸鲜，中段酸爽，尾段冰凉。解腻提神。', notes: ['海盐','柠檬','咸鲜','解腻'] },
+                { name: '椰子水', icon: '🥥', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#f5deb3,#0f3460)', desc: '清甜椰子水口味，入口椰香清甜，中段果汁感，尾段微凉。椰子味还原度高。', notes: ['椰子水','清甜','椰香','高还原'] },
+                { name: '水蜜桃', icon: '🍑', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#ffb6c1,#1a1a2e)', desc: '水蜜桃的甜美汁感，入口桃皮香，中段果肉甜汁，尾段微凉。甜度适中，少女感满满。', notes: ['水蜜桃','甜美','汁感','少女感'] },
+                { name: '绿豆', icon: '🟢', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#4caf50,#1a1a2e)', desc: '绿豆冰沙的怀旧口味，入口绿豆香，中段微甜，尾段冰爽。甜度适中不腻。', notes: ['绿豆','怀旧','冰沙','不腻'] },
+                { name: '菠萝', icon: '🍍', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#ffd700,#0f3460)', desc: '热带菠萝的酸甜果香，入口菠萝皮香，中段果肉酸甜，尾段微凉。热带风味十足。', notes: ['菠萝','热带','酸甜','微凉'] },
+                { name: '荔枝', icon: '🔴', rating: 5, price: '158元', bg: 'linear-gradient(135deg,#ff1493,#0f3460)', desc: '荔枝的甜美汁感，入口荔枝皮香，中段果肉甜香，尾段微凉。还原度高，甜而不腻。', notes: ['荔枝','甜美','高还原','不腻'] },
+                { name: '青柑', icon: '🍊', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#ffa500,#0f3460)', desc: '青柑的酸甜清爽，入口柑橘皮香，中段酸甜平衡，尾段冰凉。提神解腻。', notes: ['青柑','酸甜','清爽','解腻'] },
+                { name: '普洱', icon: '🍵', rating: 4, price: '158元', bg: 'linear-gradient(135deg,#5d4037,#1a1a2e)', desc: '普洱茶的醇厚回甘，入口茶香浓郁，中段茶韵深沉，尾段微凉。适合喜欢茶味的用户。', notes: ['普洱','醇厚','回甘','茶韵'] }
+            ]
+        }
+    };
+
+    // ===== 口味列表渲染 =====
+    let currentFlavorIndex = 0;
+    let currentSeries = 'guobiao';
+
+    function renderFlavorList() {
+        const panel = document.getElementById('flavorListPanel');
+        let html = '';
+        Object.keys(flavorData).forEach(seriesKey => {
+            const series = flavorData[seriesKey];
+            html += `<div class="flavor-series-label" style="color: ${series.seriesColor};">${series.seriesName}（${series.flavors.length}款）</div>`;
+            series.flavors.forEach((flavor, idx) => {
+                const globalIdx = `${seriesKey}-${idx}`;
+                html += `
+                    <div class="flavor-item ${currentSeries === seriesKey && currentFlavorIndex === idx ? 'active' : ''}"
+                         data-series="${seriesKey}" data-index="${idx}">
+                        <div class="flavor-item-icon" style="background: ${flavor.bg};">${flavor.icon}</div>
+                        <span class="flavor-item-name">${flavor.name}</span>
+                        <span class="flavor-item-price">${flavor.price}</span>
+                    </div>
+                `;
+            });
+        });
+        panel.innerHTML = html;
+
+        // 绑定点击事件
+        panel.querySelectorAll('.flavor-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const sKey = item.dataset.series;
+                const idx = parseInt(item.dataset.index);
+                currentSeries = sKey;
+                currentFlavorIndex = idx;
+                renderFlavorList();
+                renderFlavorDetail();
+                // 滚动列表项到可视区域
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+    }
+
+    function renderFlavorDetail() {
+        const series = flavorData[currentSeries];
+        const f = series.flavors[currentFlavorIndex];
+        const stars = '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating);
+        const notesHtml = f.notes.map(n => `<span class="flavor-note">${n}</span>`).join('');
+        document.getElementById('flavorDetailPanel').innerHTML = `
+            <div class="flavor-visual" style="background: ${f.bg};">${f.icon}</div>
+            <div class="flavor-name">${f.name}</div>
+            <div style="text-align:center; margin-bottom:16px;">
+                <span class="flavor-series-badge" style="background: ${series.seriesColor}22; color: ${series.seriesColor};">${series.seriesName}</span>
+            </div>
+            <div class="flavor-rating">${stars.split('').map(s => `<span class="star">${s}</span>`).join('')}</div>
+            <p class="flavor-desc">${f.desc}</p>
+            <div class="flavor-notes">${notesHtml}</div>
+            <div class="flavor-price-tag">${f.price}</div>
+        `;
+    }
+
+    renderFlavorList();
+    renderFlavorDetail();
+
+    // ===== 侧边栏口味分类跳转 =====
+    document.querySelectorAll('.sidebar-menu a[data-series]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const targetSeries = link.dataset.series;
+            // 滚动到口味区域
+            const flavorSection = document.getElementById('flavor');
+            if (flavorSection) {
+                e.preventDefault();
+                window.scrollTo({ top: flavorSection.offsetTop - 24, behavior: 'smooth' });
+                // 切换到对应系列
+                currentSeries = targetSeries;
+                currentFlavorIndex = 0;
+                renderFlavorList();
+                renderFlavorDetail();
+            }
+        });
+    });
+
+    // ===== 视频弹窗 =====
+    const modalOverlay = document.getElementById('videoModalOverlay');
+    const modalTitle = document.getElementById('videoModalTitle');
+    const modalBody = document.getElementById('videoModalBody');
+    const modalClose = document.getElementById('videoModalClose');
+
+    function openVideoModal(videoData) {
+        modalTitle.textContent = videoData.title || '视频播放';
+        modalBody.innerHTML = '';
+        if (videoData.type === 'iframe') {
+            const iframe = document.createElement('iframe');
+            iframe.src = videoData.src;
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            iframe.setAttribute('frameborder', '0');
+            modalBody.appendChild(iframe);
+        } else if (videoData.type === 'mp4') {
+            const video = document.createElement('video');
+            video.src = videoData.src; video.controls = true; video.autoplay = true;
+            video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
+            if (videoData.poster) video.poster = videoData.poster;
+            modalBody.appendChild(video);
+        }
+        modalOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeVideoModal() {
+        modalOverlay.classList.remove('show');
+        modalBody.innerHTML = '';
+        document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('.video-play-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = btn.closest('.video-card');
+            const videoDataStr = card.getAttribute('data-video');
+            if (videoDataStr) {
+                try { openVideoModal(JSON.parse(videoDataStr)); }
+                catch (err) { alert('视频配置有误'); }
+            }
+        });
+    });
+
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeVideoModal(); });
+    modalClose.addEventListener('click', closeVideoModal);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalOverlay.classList.contains('show')) closeVideoModal(); });
+
+    // ===== 场景卡片点击 =====
+    document.querySelectorAll('.scene-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const name = card.querySelector('h3').textContent;
+            const flavor = card.querySelector('.scene-card-tag').textContent;
+            alert(`🎯 ${name}\n\n${flavor}\n\n点击场景卡片查看详细搭配指南（功能开发中）`);
+        });
+    });
+
+    // ===== AI推荐 =====
+    function sendPrompt(text) {
+        let answer = '';
+        if (text.includes('清淡') || text.includes('入门')) {
+            answer = '推荐你试试「清风高原」🏔️\n\n以云南烟草为基调，口感温和清新，焦甜香气不呛喉，是入门首选。\n\n如果你喜欢更纯净的口感，也可以试试「纯甄极地」，冰雪般的清凉体验。\n\n如果喜欢水果味清淡款，推荐SPEED系列的「椰子水」或「老冰棍」。';
+        } else if (text.includes('咖啡')) {
+            answer = '喝咖啡推荐搭配「纯甄极地」❄️\n\n清雅烟草与咖啡醇香形成互补，清甜口感不会与咖啡味道冲突。\n\n如果喝深烘咖啡，也可以试「千山翠」的可可尾调。';
+        } else if (text.includes('击喉') || text.includes('强')) {
+            answer = '想要击喉感强，推荐「千山翠」🌿\n\n云南烟草基调中融入可可味，尾调淡淡花香，具有一定击喉感。\n\n如果想要中式烤烟风格，「逍遥游」也是不错的选择。\n\n一次性系列中「薄荷」和「薄荷莫吉托」冰感最突出。';
+        } else if (text.includes('水果')) {
+            answer = '喜欢水果味推荐以下口味：\n\n🍇 TURBO系列「葡萄」— 巨峰葡萄饱满汁感\n🍉 TURBO系列「西瓜」— 夏日清甜消暑\n🥭 TURBO系列「芒果」— 热带浓郁果香\n🍑 SPEED系列「水蜜桃」— 甜美汁感\n🍍 SPEED系列「菠萝」— 酸甜热带风\n\n根据你偏好甜度选择即可！';
+        } else if (text.includes('薄荷') || text.includes('冰凉')) {
+            answer = '喜欢薄荷冰凉感推荐：\n\n🍃 TURBO「薄荷」— 极凉薄荷，冰感爆棚，重凉党首选\n🍸 TURBO「薄荷莫吉托」— 薄荷青柠鸡尾酒感，层次更丰富\n🧊 TURBO「冰红茶」— 经典冰红茶茶香+冰感\n\n如果你是重凉党，直接上「薄荷」就对了！';
+        } else {
+            answer = '根据你的偏好，推荐你浏览上方口味列表，点击任意口味查看详细描述！\n\n国标系列适合传统烟草口感偏好者，TURBO和SPEED系列适合水果/冰凉口味偏好者。';
+        }
+        alert(`🤖 AI推荐\n\n${answer}`);
+    }
+
+    // ===== 平滑滚动 =====
+    document.querySelectorAll('a[href^="#"]:not([data-series])').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const target = document.querySelector(link.getAttribute('href'));
+            if (target && link.getAttribute('href') !== '#flavor') {
+                e.preventDefault();
+                window.scrollTo({ top: target.offsetTop - 24, behavior: 'smooth' });
+            } else if (link.getAttribute('href') === '#flavor') {
+                e.preventDefault();
+                const f = document.getElementById('flavor');
+                window.scrollTo({ top: f.offsetTop - 24, behavior: 'smooth' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
